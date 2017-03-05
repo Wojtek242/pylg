@@ -1,0 +1,2 @@
+recursive-include pylg *.py
+include LICENSE.txt

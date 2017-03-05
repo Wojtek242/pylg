@@ -1,0 +1,4 @@
+*.pyc
+dist
+PyLg.egg-info
+*.log
