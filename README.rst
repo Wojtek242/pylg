@@ -55,8 +55,9 @@ To automatically log function entry and exit use the
 Despite the name, this works for both functions and methods.
 
 ``@TraceFunction`` can take up to two optional arguments:
-- trace_args - if ``True``, input parameters will be logged.
-- trace_rv   - if ``True``, the return value will be logged.
+
+- ``trace_args`` - if ``True``, input parameters will be logged.
+- ``trace_rv``   - if ``True``, the return value will be logged.
 
 The default values for these arguments are set in a global settings
 file.
@@ -73,7 +74,7 @@ These arguments have to specified explicitly by name. Some examples:
    def some_fuction():
        pass
 
-   @TraceFunction(trace_args = False, trace_args = False)
+   @TraceFunction(trace_args = False, trace_rv = False)
    def some_fuction():
        pass
 
@@ -88,38 +89,90 @@ User Settings
 -------------
 
 The user can adjust several settings to suit their preferences. To do
-so, create a file named ``pylg_settings.py`` in the top-level
-directory and set any of the following variables to the desired values
-in order to override the defaults. The settings.py file in the project
+so, create a file named ``pylg_settings.py`` somewhere in your path
+and set any of the following variables to the desired values in order
+to override the defaults. The settings.py file in the project
 directory contains all the default settings and can be used as a
 template.
 
-- PYLG_ENABLE (default = True) - enable/disable logs.
-- PYLG (default = 'pylg.log') - the log file name.
-- CLASS_NAME_RESOLUTION (default = False) - PyLg can also log the
-  class name along with the method name if one exists. However, for
-  this to work correctly the ``trace`` function cannot be called from
-  functions that are not decorated by ``@TraceFunction`` which is why
-  it is disabled by default.
-- DEFAULT_TRACE_ARGS (default = True) - the default value for
-  ``trace_args`` argument which can be passed to the ``@TraceFunction`
-  decorator. If ``trace_args`` is ``True`` all parameters passed to
-  the function will be logged. This can be overriden on an individual
-  function basis.
-- DEFAULT_TRACE_RV (default = True) - the default value for trace_rv
-  argument which can be passed to the ``@TraceFunction`` decorator. If
-  ``trace_rv`` is ``True`` the function's return value will be
-  logged. This can be overriden on an individual function basis.
-- EXCEPTION_WARNING (default = True) - PyLg catches all exceptions in
-  traced functions, logs them, and then re-raises them with the full
-  backtrace. This setting determines whether it should also produce a
-  warning for the user using the Python warning mechanism.
-- FILENAME_COLUMN_WIDTH (default = 32) - the column width reserved for
-  the file name. Names that are too short will be padded with
-  whitespace and names that are too long will be truncated.
-- FUNCTION_COLUMN_WIDTH (default = 32) - the column width reserved for
-  the function name. Names that are too short will be padded with
-  whitespace and names that are too long will be truncated.
+- ``PYLG_ENABLE`` (default = ``True``) - enable/disable PyLg.
+
+- ``PYLG_FILE`` (default = ``'pylg.log'``) - the log file name.
+
+- ``EXCEPTION_WARNING`` (default = ``True``) - if ``True``, PyLg will
+  print a warning about every exception caught to stderr.
+
+- ``EXCEPTION_EXIT`` (default = ``False``) - if ``True``, PyLg will
+  force the program to exit (and not just raise ``SystemExit``)
+  whenever an exception occurs. This will happen even if the exception
+  would be handled at a later point.
+
+- ``TRACE_TIME`` (default = ``TRUE``) - enable/disable time logging.
+
+- ``TIME_FORMAT`` (default = ``"%Y-%m-%d %H:%M:%S.%f"``) - formatting
+  for the time trace. For a full list of options, see
+  https://docs.python.org/2/library/datetime.html#strftime-strptime-behavior.
+
+- ``TRACE_FILENAME`` (default = ``True``) - enable/disable file name
+  logging.
+
+- ``FILENAME_COLUMN_WIDTH`` (default = ``20``) - the column width for
+  the file name. If a name is too long, it will be truncated.
+
+- ``TRACE_LINENO`` (default = ``True``) - enable/disable the logging
+  of the line number from which the trace call was made. For entry and
+  exit messages this logs the line in which the decorator is placed
+  (which should be directly above the function itself).
+
+- ``LINENO_WIDTH`` (default = ``4``) - the minimum number of digits to
+  use to print the line number. If the number is too long, more digits
+  will be used.
+
+- ``TRACE_FUNCTION`` (default = ``True``) - enable/disable the logging
+  of the function name from which the trace call was made. Entry/exit
+  logs refer to the function they enter into and exit from.
+
+- ``FUNCTION_COLUMN_WIDTH`` (default = ``32``) - the column width for
+  the function name. If a name is too long, it will be truncated.
+
+- ``CLASS_NAME_RESOLUTION`` (default = ``False``) - enable/disable
+  class name resolution. Function names will be printed with their
+  class names. IMPORTANT: If this setting is enabled, the trace
+  function should ONLY be called from within functions that have the
+  ``@TraceFunction`` decorator OR outside of any function.
+
+- ``TRACE_MESSAGE`` (default = ``True``) - enable/disable message
+  logging.
+
+- ``MESSAGE_WIDTH`` (default = ``0``) - the column width for the
+  message. A width of zero means unlimited.
+
+- ``MESSAGE_WRAP`` (default = ``True``) - if ``True``, PyLG will wrap
+  the message to fit within the column width. Otherwise, the message
+  will be truncated.
+
+- ``MESSAGE_MARK_TRUNCATION`` (default = ``True``) - if ``True``,
+  truncated message lines should have the last character replaced with
+  ``\``.
+
+- ``TRACE_SELF`` (default = ``False``) - enable/disable logging of the
+  ``self`` function argument.
+
+- ``COLLAPSE_LISTS`` (default = ``False``) - if ``True`` lists will be
+  collapsed to ``[ len=x ]`` where ``x`` denotes the number of
+  elements in the list.
+
+- ``COLLAPSE_DICTS`` (default = ``False``) - if ``True`` dictionaries
+  will be collapsed to ``{ len=x }`` where ``x`` denotes the number of
+  elements in the dictionary.
+
+- ``DEFAULT_TRACE_ARGS`` (default = ``True``) - the default setting
+  for ``trace_args`` which determines whether TraceFunction should
+  trace function parameters on entry.
+
+- ``DEFAULT_TRACE_RV`` (default = ``True``) - the default setting for
+  ``trace_rv`` which determines whether TraceFunction should trace
+  function return values on exit.
 
 Under development
 -----------------

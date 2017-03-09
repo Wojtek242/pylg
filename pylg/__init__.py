@@ -1,4 +1,4 @@
-#-------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 # PyLg: module to facilitate and automate the process of writing runtime logs.
 # Copyright (C) 2017 Wojciech Kozlowski <wojciech.kozlowski@vivaldi.net>
 #
@@ -14,6 +14,11 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
-#-------------------------------------------------------------------------------
+# -----------------------------------------------------------------------------
 
-from .pylg import TraceFunction, trace
+from .loadSettings import PYLG_ENABLE
+
+if PYLG_ENABLE:
+    from .pylg import TraceFunction, trace
+else:
+    from .dummy import TraceFunction, trace

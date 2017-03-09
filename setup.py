@@ -8,15 +8,15 @@ with open(path.join(pwd, 'README.rst'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name = 'PyLg',
-    version = '1.1.0',
-    description = 'Python module to facilitate and automate the process of writing runtime logs.',
-    long_description = long_description,
-    url = 'https://gitlab.wojciechkozlowski.eu/wojtek/PyLg',
+    name='PyLg',
+    version='1.2.0',
+    description='Python module to facilitate and automate the process of writing runtime logs.',
+    long_description=long_description,
+    url='https://gitlab.wojciechkozlowski.eu/wojtek/PyLg',
 
-    author = 'Wojciech Kozlowski',
-    author_email = 'wojciech.kozlowski@vivaldi.net',
-    classifiers = [
+    author='Wojciech Kozlowski',
+    author_email='wojciech.kozlowski@vivaldi.net',
+    classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
         'Topic :: Software Development :: Debuggers',
@@ -26,7 +26,7 @@ setup(
     ],
 
     keywords='development log debug trace',
-    include_package_data = True,
+    include_package_data=True,
 
     packages=["pylg"]
 
