@@ -478,54 +478,55 @@ def trace(message, function=None):
             # -----------------------------------------------------------------
             wrapped = textwrap.wrap(message, MESSAGE_WIDTH)
 
-            if wrapped:
-                if MESSAGE_WRAP:
+            if not wrapped:
+                wrapped = [""]
 
-                    # ---------------------------------------------------------
-                    # Print the first line. It gets special treatment
-                    # as it doesn't need whitespace in front of it.
-                    # ---------------------------------------------------------
-                    msg += wrapped[0]
+            if MESSAGE_WRAP:
 
+                # -------------------------------------------------------------
+                # Print the first line. It gets special treatment as
+                # it doesn't need whitespace in front of it.
+                # -------------------------------------------------------------
+                msg += wrapped[0]
+
+                # -------------------------------------------------------------
+                # Print the remaining lines. Append whitespace to
+                # align it with the first line.
+                # -------------------------------------------------------------
+                for line in wrapped[1:]:
+                    msg += '\n' + '{:{w}}'.format('', w=premsglen) + line
+
+            else:
+                # -------------------------------------------------------------
+                # The message is not being wrapped.
+                # -------------------------------------------------------------
+
+                if MESSAGE_MARK_TRUNCATION and wrapped[1:]:
                     # ---------------------------------------------------------
-                    # Print the remaining lines. Append whitespace to
-                    # align it with the first line.
+                    # We want to mark truncated lines so we need to
+                    # determine if the line is being truncated. If it
+                    # is we replace the last character with '\'.
                     # ---------------------------------------------------------
-                    for line in wrapped[1:]:
-                        msg += '\n' + '{:{w}}'.format('', w=premsglen) + line
+
+                    if MESSAGE_WIDTH > 1:
+                        wrapped = textwrap.wrap(wrapped[0],
+                                                MESSAGE_WIDTH - 1)
+                        assert wrapped
+
+                        msg += ('{m:{w}}'.format(m=wrapped[0],
+                                                 w=MESSAGE_WIDTH - 1) +
+                                '\\')
+
+                    else:
+                        assert MESSAGE_WIDTH == 1
+                        msg += '\\'
 
                 else:
                     # ---------------------------------------------------------
-                    # The message is not being wrapped.
+                    # Either the message is not being truncated or
+                    # MESSAGE_MARK_TRUNCATION is False.
                     # ---------------------------------------------------------
-
-                    if MESSAGE_MARK_TRUNCATION and wrapped[1:]:
-                        # -----------------------------------------------------
-                        # We want to mark truncated lines so we need
-                        # to determine if the line is being
-                        # truncated. If it is we replace the last
-                        # character with '\'.
-                        # -----------------------------------------------------
-
-                        if MESSAGE_WIDTH > 1:
-                            wrapped = textwrap.wrap(wrapped[0],
-                                                    MESSAGE_WIDTH - 1)
-                            assert wrapped
-
-                            msg += ('{m:{w}}'.format(m=wrapped[0],
-                                                     w=MESSAGE_WIDTH - 1) +
-                                    '\\')
-
-                        else:
-                            assert MESSAGE_WIDTH == 1
-                            msg += '\\'
-
-                    else:
-                        # -----------------------------------------------------
-                        # Either the message is not being truncated or
-                        # MESSAGE_MARK_TRUNCATION is False.
-                        # -----------------------------------------------------
-                        msg += wrapped[0]
+                    msg += wrapped[0]
 
         else:
             # -----------------------------------------------------------------

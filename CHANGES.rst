@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.2.2
+-----
+
+- Modified message wrapping code.
+
 1.2.1
 -----
 
