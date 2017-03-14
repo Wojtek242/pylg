@@ -17,57 +17,25 @@
 # -----------------------------------------------------------------------------
 
 from functools import partial
+from .pylg import TraceFunction
 
 
-class TraceFunction(object):
+class TraceFunctionDummy(TraceFunction):
 
     """ Dummy implementation of TraceFunction.
     """
 
-    def __get__(self, obj, objtype):
-
-        """ Support for instance functions.
-        """
-
-        return partial(self.__call__, obj)
-
     def __init__(self, *args, **kwargs):
 
-        """ Constructor for dummy TraceFunction. Note that the behaviour is
-            different depending on whether TraceFunction is passed any
-            parameters. For details see the non-dummy implementation.
+        """ Constructor for dummy TraceFunction.
         """
 
         # ---------------------------------------------------------------------
-        # Make sure this decorator is never called with no arguments.
+        # Rather than having an entirely empty dummy class, we call
+        # the superclass constructor to have input verification even
+        # when PyLg is disabled.
         # ---------------------------------------------------------------------
-        assert args or kwargs
-
-        if args:
-
-            # -----------------------------------------------------------------
-            # The function init_function will verify the input.
-            # -----------------------------------------------------------------
-            self.init_function(*args, **kwargs)
-
-        if kwargs:
-
-            trace_args_str = 'trace_args'
-            trace_rv_str = 'trace_rv'
-
-            # -----------------------------------------------------------------
-            # If kwargs is non-empty, it should only contain trace_rv,
-            # trace_args, or both and args should be empty. Assert all
-            # this.
-            # -----------------------------------------------------------------
-            assert not args
-            assert (len(kwargs) > 0) and (len(kwargs) <= 2)
-            if len(kwargs) == 1:
-                assert (trace_rv_str in kwargs) or (trace_args_str in kwargs)
-            elif len(kwargs) == 2:
-                assert (trace_rv_str in kwargs) and (trace_args_str in kwargs)
-
-            self.function = None
+        super(TraceFunctionDummy, self).__init__(*args, **kwargs)
 
     def __call__(self, *args, **kwargs):
 

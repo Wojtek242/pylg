@@ -109,7 +109,7 @@ TRACE_MESSAGE = True
 MESSAGE_WIDTH = 0
 
 # -----------------------------------------------------------------------------
-# If True, PyLG will wrap the message to fit within the column
+# If True, PyLg will wrap the message to fit within the column
 # width. Otherwise, the message will be truncated.
 # -----------------------------------------------------------------------------
 MESSAGE_WRAP = True

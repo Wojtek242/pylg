@@ -332,7 +332,7 @@ class TraceFunction(object):
                         value = kwargs[name]
                     else:
                         value = self.function.defaults[name]
-                    msg += self.get_value_string(value) +  ", "
+                    msg += self.get_value_string(value) + ", "
 
                 msg = msg[:-2]
 

@@ -21,4 +21,4 @@ from .loadSettings import PYLG_ENABLE
 if PYLG_ENABLE:
     from .pylg import TraceFunction, trace
 else:
-    from .dummy import TraceFunction, trace
+    from .dummy import TraceFunctionDummy as TraceFunction, trace

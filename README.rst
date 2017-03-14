@@ -147,7 +147,7 @@ template.
 - ``MESSAGE_WIDTH`` (default = ``0``) - the column width for the
   message. A width of zero means unlimited.
 
-- ``MESSAGE_WRAP`` (default = ``True``) - if ``True``, PyLG will wrap
+- ``MESSAGE_WRAP`` (default = ``True``) - if ``True``, PyLg will wrap
   the message to fit within the column width. Otherwise, the message
   will be truncated.
 

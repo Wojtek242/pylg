@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.2.1
+-----
+
+- Dummy implementation used when PyLg is disabled has been simplified.
+
 1.2.0
 -----
 
