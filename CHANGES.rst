@@ -1,6 +1,14 @@
 Changelog
 =========
 
+1.3.0
+-----
+
+- Added option to trace return value type.
+- Added options for tracing exception tracebacks.
+- Made all exception options possible to set individually for functions.
+- Added support for multi-line trace messages.
+
 1.2.2
 -----
 

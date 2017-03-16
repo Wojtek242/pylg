@@ -54,10 +54,27 @@ To automatically log function entry and exit use the
 
 Despite the name, this works for both functions and methods.
 
-``@TraceFunction`` can take up to two optional arguments:
+``@TraceFunction`` can take up to seven optional arguments:
 
-- ``trace_args`` - if ``True``, input parameters will be logged.
-- ``trace_rv``   - if ``True``, the return value will be logged.
+- ``exception_warning`` - if ``True``, PyLg will print a warning about
+every exception caught to ``stderr``.
+
+- ``exception_tb_file`` - if ``True``, PyLg will write the exception
+tracebacks to the log file.
+
+- ``exception_tb_stderr`` - if ``True``, PyLg will print the exception
+tracebacks to ``stderr``.
+
+- ``exception_exit`` - if ``True``, PyLg will force the program to
+exit (and not just raise SystemExit) whenever an exception
+occurs. This will happen even if the exception would be handled at a
+later point.
+
+- ``trace_args`` - if ``True``, PyLg will log input parameters.
+
+- ``trace_rv`` - if ``True``, PyLg will log return values.
+
+- ``trace_rv_type`` - if ``True``, PyLg will log return value types.
 
 The default values for these arguments are set in a global settings
 file.
@@ -70,11 +87,7 @@ These arguments have to specified explicitly by name. Some examples:
    def some_fuction():
        pass
 
-   @TraceFunction(trace_rv = False)
-   def some_fuction():
-       pass
-
-   @TraceFunction(trace_args = False, trace_rv = False)
+   @TraceFunction(trace_args = False, exception_tb_stderr = True)
    def some_fuction():
        pass
 
@@ -99,13 +112,17 @@ template.
 
 - ``PYLG_FILE`` (default = ``'pylg.log'``) - the log file name.
 
-- ``EXCEPTION_WARNING`` (default = ``True``) - if ``True``, PyLg will
-  print a warning about every exception caught to stderr.
+- ``DEFAULT_EXCEPTION_WARNING`` (default = ``True``) - the default
+  setting for ``exception_warning``.
 
-- ``EXCEPTION_EXIT`` (default = ``False``) - if ``True``, PyLg will
-  force the program to exit (and not just raise ``SystemExit``)
-  whenever an exception occurs. This will happen even if the exception
-  would be handled at a later point.
+- ``DEFAULT_EXCEPTION_TB_FILE`` (default = ``True``) - the default
+  setting for ``exception_tb_file``.
+
+- ``DEFAULT_EXCEPTION_TB_STDERR`` (default = ``False``) - the default
+  setting for ``exception_tb_stderr``.
+
+- ``DEAULT_EXCEPTION_EXIT`` (default = ``False``) - the default
+  setting for ``exception_exit``.
 
 - ``TRACE_TIME`` (default = ``TRUE``) - enable/disable time logging.
 
@@ -167,12 +184,13 @@ template.
   elements in the dictionary.
 
 - ``DEFAULT_TRACE_ARGS`` (default = ``True``) - the default setting
-  for ``trace_args`` which determines whether TraceFunction should
-  trace function parameters on entry.
+  for ``trace_args``.
 
 - ``DEFAULT_TRACE_RV`` (default = ``True``) - the default setting for
-  ``trace_rv`` which determines whether TraceFunction should trace
-  function return values on exit.
+  ``trace_rv``.
+
+- ``DEFAULT_TRACE_RV_TYPE`` (default = ``True``) - the default setting
+  for ``trace_rv_type``.
 
 Under development
 -----------------

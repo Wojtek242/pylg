@@ -172,20 +172,37 @@ if PYLG_USER_FILE is not None:
         from .settings import PYLG_FILE
 
     # -------------------------------------------------------------------------
-    # EXCEPTION_WARNING - bool
+    # DEFAULT_EXCEPTION_WARNING - bool
     # -------------------------------------------------------------------------
     try:
-        pylg_check_bool(EXCEPTION_WARNING, "EXCEPTION_WARNING")
+        pylg_check_bool(DEFAULT_EXCEPTION_WARNING, "DEFAULT_EXCEPTION_WARNING")
     except ImportError:
-        from .settings import EXCEPTION_WARNING
+        from .settings import DEFAULT_EXCEPTION_WARNING
 
     # -------------------------------------------------------------------------
-    # EXCEPTION_EXIT - bool
+    # DEFAULT_EXCEPTION_TB_FILE - bool
     # -------------------------------------------------------------------------
     try:
-        pylg_check_bool(EXCEPTION_EXIT, "EXCEPTION_EXIT")
+        pylg_check_bool(DEFAULT_EXCEPTION_TB_FILE, "DEFAULT_EXCEPTION_TB_FILE")
     except ImportError:
-        from .settings import EXCEPTION_EXIT
+        from .settings import DEFAULT_EXCEPTION_TB_FILE
+
+    # -------------------------------------------------------------------------
+    # DEFAULT_EXCEPTION_TB_STDERR - bool
+    # -------------------------------------------------------------------------
+    try:
+        pylg_check_bool(DEFAULT_EXCEPTION_TB_STDERR,
+                        "DEFAULT_EXCEPTION_TB_STDERR")
+    except ImportError:
+        from .settings import DEFAULT_EXCEPTION_TB_STDERR
+
+    # -------------------------------------------------------------------------
+    # DEFAULT_EXCEPTION_EXIT - bool
+    # -------------------------------------------------------------------------
+    try:
+        pylg_check_bool(DEFAULT_EXCEPTION_EXIT, "DEFAULT_EXCEPTION_EXIT")
+    except ImportError:
+        from .settings import DEFAULT_EXCEPTION_EXIT
 
     # -------------------------------------------------------------------------
     # TRACE_TIME - bool
@@ -330,3 +347,9 @@ if PYLG_USER_FILE is not None:
         pylg_check_bool(DEFAULT_TRACE_RV, "DEFAULT_TRACE_RV")
     except ImportError:
         from .settings import DEFAULT_TRACE_RV
+
+# -----------------------------------------------------------------------------
+# Some final value processing.
+# -----------------------------------------------------------------------------
+if MESSAGE_WIDTH == 0:
+    MESSAGE_WIDTH = float("inf")

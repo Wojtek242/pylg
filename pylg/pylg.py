@@ -16,6 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 
+from __future__ import print_function
 from datetime import datetime
 from functools import partial
 import traceback
@@ -153,8 +154,14 @@ class TraceFunction(object):
 
         if args:
 
+            self.exception_warning = DEFAULT_EXCEPTION_WARNING
+            self.exception_tb_file = DEFAULT_EXCEPTION_TB_FILE
+            self.exception_tb_stderr = DEFAULT_EXCEPTION_TB_STDERR
+            self.exception_exit = DEFAULT_EXCEPTION_EXIT
+
             self.trace_args = DEFAULT_TRACE_ARGS
             self.trace_rv = DEFAULT_TRACE_RV
+            self.trace_rv_type = DEFAULT_TRACE_RV_TYPE
 
             # -----------------------------------------------------------------
             # The function init_function will verify the input.
@@ -163,30 +170,62 @@ class TraceFunction(object):
 
         if kwargs:
 
+            exception_warning_str = 'exception_warning'
+            exception_tb_file_str = 'exception_tb_file'
+            exception_tb_stderr_str = 'exception_tb_stderr'
+            exception_exit_str = 'exception_exit'
+
             trace_args_str = 'trace_args'
             trace_rv_str = 'trace_rv'
+            trace_rv_type_str = 'trace_rv_type'
 
             # -----------------------------------------------------------------
-            # If kwargs is non-empty, it should only contain trace_rv,
-            # trace_args, or both and args should be empty. Assert all
-            # this.
+            # If kwargs is non-empty, args should be empty.
             # -----------------------------------------------------------------
             assert not args
-            assert (len(kwargs) > 0) and (len(kwargs) <= 2)
-            if len(kwargs) == 1:
-                assert (trace_rv_str in kwargs) or (trace_args_str in kwargs)
-            elif len(kwargs) == 2:
-                assert (trace_rv_str in kwargs) and (trace_args_str in kwargs)
 
-            if trace_args_str in kwargs:
+            try:
+                self.exception_warning = kwargs[exception_warning_str]
+                pylg_check_bool(self.exception_warning, "exception_warning")
+            except (KeyError, ImportError):
+                self.exception_warning = DEFAULT_EXCEPTION_WARNING
+
+            try:
+                self.exception_tb_file = kwargs[exception_tb_file_str]
+                pylg_check_bool(self.exception_tb_file, "exception_tb_file")
+            except (KeyError, ImportError):
+                self.exception_tb_file = DEFAULT_EXCEPTION_TB_FILE
+
+            try:
+                self.exception_tb_stderr = kwargs[exception_tb_stderr_str]
+                pylg_check_bool(self.exception_tb_stderr,
+                                "exception_tb_stderr")
+            except (KeyError, ImportError):
+                self.exception_tb_stderr = DEFAULT_EXCEPTION_TB_STDERR
+
+            try:
+                self.exception_exit = kwargs[exception_exit_str]
+                pylg_check_bool(self.exception_exit, "exception_exit")
+            except (KeyError, ImportError):
+                self.exception_exit = DEFAULT_EXCEPTION_EXIT
+
+            try:
                 self.trace_args = kwargs[trace_args_str]
-            else:
+                pylg_check_bool(self.trace_args, "trace_args")
+            except (KeyError, ImportError):
                 self.trace_args = DEFAULT_TRACE_ARGS
 
-            if trace_rv_str in kwargs:
+            try:
                 self.trace_rv = kwargs[trace_rv_str]
-            else:
+                pylg_check_bool(self.trace_rv, "trace_rv")
+            except (KeyError, ImportError):
                 self.trace_rv = DEFAULT_TRACE_RV
+
+            try:
+                self.trace_rv_type = kwargs[trace_rv_type_str]
+                pylg_check_bool(self.trace_rv_type, "trace_rv_type")
+            except (KeyError, ImportError):
+                self.trace_rv_type = DEFAULT_TRACE_RV_TYPE
 
             self.function = None
 
@@ -249,8 +288,8 @@ class TraceFunction(object):
         except Exception as e:
             self.trace_exception(e)
 
-            if EXCEPTION_EXIT:
-                traceback.print_exc(file=sys.stderr)
+            if self.exception_exit:
+                warnings.warn("Exit forced by EXCEPTION_EXIT")
                 os._exit(1)
 
             raise
@@ -360,6 +399,9 @@ class TraceFunction(object):
             else:
                 msg += "---"
 
+            if self.trace_rv_type:
+                msg += " (type: " + type(rv).__name__ + ")"
+
         trace(msg, function=self.function)
         return
 
@@ -379,8 +421,18 @@ class TraceFunction(object):
         if str(exception) is not "":
             msg += " - " + str(exception)
 
-        if EXCEPTION_WARNING:
+        if self.exception_warning:
             warnings.warn(core_msg, RuntimeWarning)
+
+        if self.exception_tb_file:
+            msg += "\n--- EXCEPTION ---\n"
+            msg += traceback.format_exc()
+            msg += "-----------------"
+
+        if self.exception_tb_stderr:
+            print("--- EXCEPTION ---", file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+            print("-----------------", file=sys.stderr)
 
         trace(msg, function=self.function)
         return
@@ -466,26 +518,41 @@ def trace(message, function=None):
 
         message = str(message)
 
-        if MESSAGE_WIDTH > 0:
+        # ---------------------------------------------------------------------
+        # Get the length of the trace line so far
+        # ---------------------------------------------------------------------
+        premsglen = len(msg)
 
-            # -----------------------------------------------------------------
-            # Get the length of the trace line so far
-            # -----------------------------------------------------------------
-            premsglen = len(msg)
+        # ---------------------------------------------------------------------
+        # Split into lines which will be handled separately.
+        # ---------------------------------------------------------------------
+        lines = message.splitlines()
 
+        if not lines:
+            lines = [""]
+
+        for idx, line in enumerate(lines):
             # -----------------------------------------------------------------
             # Wrap the text.
             # -----------------------------------------------------------------
-            wrapped = textwrap.wrap(message, MESSAGE_WIDTH)
+            wrapped = textwrap.wrap(line, MESSAGE_WIDTH)
 
             if not wrapped:
                 wrapped = [""]
 
+            # -----------------------------------------------------------------
+            # If this is the first line of the whole trace message, it
+            # gets special treatment as it doesn't need whitespace in
+            # front of it. Otherwise, align it with the previous line.
+            # -----------------------------------------------------------------
+            if idx != 0:
+                msg += '{:{w}}'.format('', w=premsglen)
+
             if MESSAGE_WRAP:
 
                 # -------------------------------------------------------------
-                # Print the first line. It gets special treatment as
-                # it doesn't need whitespace in front of it.
+                # The first wrapped line gets special treatment as any
+                # whitespace should already be prepended.
                 # -------------------------------------------------------------
                 msg += wrapped[0]
 
@@ -493,8 +560,8 @@ def trace(message, function=None):
                 # Print the remaining lines. Append whitespace to
                 # align it with the first line.
                 # -------------------------------------------------------------
-                for line in wrapped[1:]:
-                    msg += '\n' + '{:{w}}'.format('', w=premsglen) + line
+                for wrline in wrapped[1:]:
+                    msg += '\n' + '{:{w}}'.format('', w=premsglen) + wrline
 
             else:
                 # -------------------------------------------------------------
@@ -509,8 +576,7 @@ def trace(message, function=None):
                     # ---------------------------------------------------------
 
                     if MESSAGE_WIDTH > 1:
-                        wrapped = textwrap.wrap(wrapped[0],
-                                                MESSAGE_WIDTH - 1)
+                        wrapped = textwrap.wrap(wrapped[0], MESSAGE_WIDTH - 1)
                         assert wrapped
 
                         msg += ('{m:{w}}'.format(m=wrapped[0],
@@ -528,17 +594,10 @@ def trace(message, function=None):
                     # ---------------------------------------------------------
                     msg += wrapped[0]
 
-        else:
             # -----------------------------------------------------------------
-            # A MESSAGE_WIDTH of 0 denotes no limit.
+            # Terminate with a newline.
             # -----------------------------------------------------------------
-            assert MESSAGE_WIDTH == 0
-            msg += message
-
-    # -------------------------------------------------------------------------
-    # Terminate the log line with a newline.
-    # -------------------------------------------------------------------------
-    msg += "\n"
+            msg += "\n"
 
     # -------------------------------------------------------------------------
     # Write the data to the log file.

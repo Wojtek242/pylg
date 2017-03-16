@@ -27,17 +27,30 @@ PYLG_ENABLE = True
 PYLG_FILE = 'pylg.log'
 
 # -----------------------------------------------------------------------------
-# If True, PyLg will print a warning about every exception caught to
-# stderr.
+# The default value for 'exception_warning'. If True, PyLg will print
+# a warning about every exception caught to stderr.
 # -----------------------------------------------------------------------------
-EXCEPTION_WARNING = True
+DEFAULT_EXCEPTION_WARNING = True
 
 # -----------------------------------------------------------------------------
-# If True, PyLg will force the program to exit (and not just raise
-# SystemExit) whenever an exception occurs. This will happen even if
-# the exception would be handled at a later point.
+# The default value for 'exception_tb_file'. If True, PyLg will write
+# the exception tracebacks to the log file.
 # -----------------------------------------------------------------------------
-EXCEPTION_EXIT = False
+DEFAULT_EXCEPTION_TB_FILE = True
+
+# -----------------------------------------------------------------------------
+# The default value for 'exception_tb_file'. If True, PyLg will print
+# the exception tracebacks to stderr.
+# -----------------------------------------------------------------------------
+DEFAULT_EXCEPTION_TB_STDERR = False
+
+# -----------------------------------------------------------------------------
+# The default value for 'exception_exit'. If True, PyLg will force the
+# program to exit (and not just raise SystemExit) whenever an
+# exception occurs. This will happen even if the exception would be
+# handled at a later point.
+# -----------------------------------------------------------------------------
+DEFAULT_EXCEPTION_EXIT = False
 
 # -----------------------------------------------------------------------------
 # Enable/disable time logging.
@@ -116,7 +129,9 @@ MESSAGE_WRAP = True
 
 # -----------------------------------------------------------------------------
 # If true, truncated message lines should have the last character
-# replaced with '\'.
+# replaced with '\'. Note that this reduces MESSAGE_WIDTH by 1 for
+# truncated lines which may truncate words that would've otherwise
+# appeared in the message.
 # -----------------------------------------------------------------------------
 MESSAGE_MARK_TRUNCATION = True
 
@@ -134,9 +149,19 @@ COLLAPSE_LISTS = False
 COLLAPSE_DICTS = False
 
 # -----------------------------------------------------------------------------
-# The default settings for 'trace_args' and 'trace_rv' which determine
-# whether TraceFunction should trace function parameters on entry and
-# return values on exit.
+# The default setting for 'trace_args'. If True, PyLg will log input
+# parameters.
 # -----------------------------------------------------------------------------
 DEFAULT_TRACE_ARGS = True
+
+# -----------------------------------------------------------------------------
+# The default setting for 'trace_rv'. If True, PyLg will log return
+# values.
+# -----------------------------------------------------------------------------
 DEFAULT_TRACE_RV = True
+
+# -----------------------------------------------------------------------------
+# The default settings for 'trace_rv_type'. If True, PyLg will log
+# return value types.
+# -----------------------------------------------------------------------------
+DEFAULT_TRACE_RV_TYPE = False
