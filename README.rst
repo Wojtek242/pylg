@@ -57,18 +57,18 @@ Despite the name, this works for both functions and methods.
 ``@TraceFunction`` can take up to seven optional arguments:
 
 - ``exception_warning`` - if ``True``, PyLg will print a warning about
-every exception caught to ``stderr``.
+  every exception caught to ``stderr``.
 
 - ``exception_tb_file`` - if ``True``, PyLg will write the exception
-tracebacks to the log file.
+  tracebacks to the log file.
 
 - ``exception_tb_stderr`` - if ``True``, PyLg will print the exception
-tracebacks to ``stderr``.
+  tracebacks to ``stderr``.
 
 - ``exception_exit`` - if ``True``, PyLg will force the program to
-exit (and not just raise SystemExit) whenever an exception
-occurs. This will happen even if the exception would be handled at a
-later point.
+  exit (and not just raise SystemExit) whenever an exception
+  occurs. This will happen even if the exception would be handled at a
+  later point.
 
 - ``trace_args`` - if ``True``, PyLg will log input parameters.
 
