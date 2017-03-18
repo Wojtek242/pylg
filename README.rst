@@ -121,7 +121,7 @@ template.
 - ``DEFAULT_EXCEPTION_TB_STDERR`` (default = ``False``) - the default
   setting for ``exception_tb_stderr``.
 
-- ``DEAULT_EXCEPTION_EXIT`` (default = ``False``) - the default
+- ``DEFAULT_EXCEPTION_EXIT`` (default = ``False``) - the default
   setting for ``exception_exit``.
 
 - ``TRACE_TIME`` (default = ``TRUE``) - enable/disable time logging.
@@ -170,7 +170,9 @@ template.
 
 - ``MESSAGE_MARK_TRUNCATION`` (default = ``True``) - if ``True``,
   truncated message lines should have the last character replaced with
-  ``\``.
+  ``\``. Note that this reduces ``MESSAGE_WIDTH`` by ``1`` for
+  truncated lines which may truncate words that would've otherwise
+  appeared in the message.
 
 - ``TRACE_SELF`` (default = ``False``) - enable/disable logging of the
   ``self`` function argument.
