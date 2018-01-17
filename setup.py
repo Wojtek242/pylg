@@ -15,7 +15,7 @@ setup(
     url='https://gitlab.wojciechkozlowski.eu/wojtek/PyLg',
 
     author='Wojciech Kozlowski',
-    author_email='wojciech.kozlowski@vivaldi.net',
+    author_email='wk@wojciechkozlowski.eu',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',

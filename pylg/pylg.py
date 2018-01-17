@@ -1,6 +1,6 @@
 # -----------------------------------------------------------------------------
 # PyLg: module to facilitate and automate the process of writing runtime logs.
-# Copyright (C) 2017 Wojciech Kozlowski <wojciech.kozlowski@vivaldi.net>
+# Copyright (C) 2017 Wojciech Kozlowski <wk@wojciechkozlowski.eu>
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
