@@ -85,7 +85,7 @@ def pylg_check_bool(value, name):
 
 def pylg_check_string(value, name):
 
-    if not isinstance(value, basestring):
+    if not isinstance(value, str):
 
         warning_msg = ("Invalid type for " + name + " in " +
                        PYLG_USER_FILE +
