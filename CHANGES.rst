@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.3.3
+-----
+
+- Fix python 3 issue with basestring type
+
 1.3.2
 -----
 
