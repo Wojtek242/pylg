@@ -12,7 +12,7 @@ setup(
     version='1.3.3',
     description='Python module to facilitate and automate the process of writing runtime logs.',
     long_description=long_description,
-    url='https://gitlab.wojciechkozlowski.eu/wojtek/PyLg',
+    url='https://github.com/Wojtek242/pylg',
 
     author='Wojciech Kozlowski',
     author_email='wk@wojciechkozlowski.eu',

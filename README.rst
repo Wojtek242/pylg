@@ -9,8 +9,8 @@ informative logs.
 Demo
 ----
 
-.. image:: https://gitlab.wojciechkozlowski.eu/wojtek/PyLg/raw/pylg-dev/screenshots/demo.png
-  :target: https://gitlab.wojciechkozlowski.eu/wojtek/PyLg/raw/pylg-dev/screenshots/demo.png
+.. image:: https://raw.githubusercontent.com/Wojtek242/pylg/master/screenshots/demo.png
+  :target: https://raw.githubusercontent.com/Wojtek242/pylg/master/screenshots/demo.png
 
 Features
 --------
