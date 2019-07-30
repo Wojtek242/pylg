@@ -16,7 +16,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 # -----------------------------------------------------------------------------
 
-from .loadSettings import PYLG_ENABLE
+from .load_settings import PYLG_ENABLE
 
 if PYLG_ENABLE:
     from .pylg import TraceFunction, trace

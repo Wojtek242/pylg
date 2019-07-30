@@ -29,7 +29,7 @@ import os
 # -----------------------------------------------------------------------------
 # Load settings.
 # -----------------------------------------------------------------------------
-from .loadSettings import *
+from .load_settings import *
 
 
 class ClassNameStack(object):
