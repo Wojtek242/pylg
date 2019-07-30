@@ -49,7 +49,7 @@ To automatically log function entry and exit use the
 ::
 
    @TraceFunction
-   def some_fuction():
+   def some_function():
        pass
 
 Despite the name, this works for both functions and methods.
@@ -84,11 +84,11 @@ These arguments have to specified explicitly by name. Some examples:
 ::
 
    @TraceFunction(trace_args = False)
-   def some_fuction():
+   def some_function():
        pass
 
    @TraceFunction(trace_args = False, exception_tb_stderr = True)
-   def some_fuction():
+   def some_function():
        pass
 
 The other way to interact with PyLg is to log a user defined message
