@@ -9,13 +9,13 @@ with open(path.join(pwd, 'README.rst'), encoding='utf-8') as f:
 
 setup(
     name='PyLg',
-    version='1.3.1',
+    version='1.3.2',
     description='Python module to facilitate and automate the process of writing runtime logs.',
     long_description=long_description,
     url='https://gitlab.wojciechkozlowski.eu/wojtek/PyLg',
 
     author='Wojciech Kozlowski',
-    author_email='wojciech.kozlowski@vivaldi.net',
+    author_email='wk@wojciechkozlowski.eu',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
