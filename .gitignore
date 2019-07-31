@@ -2,3 +2,4 @@
 dist
 PyLg.egg-info
 *.log
+.coverage

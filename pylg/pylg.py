@@ -1,24 +1,8 @@
-# -----------------------------------------------------------------------------
-# PyLg: module to facilitate and automate the process of writing runtime logs.
-# Copyright (C) 2017 Wojciech Kozlowski <wk@wojciechkozlowski.eu>
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <http://www.gnu.org/licenses/>.
-# -----------------------------------------------------------------------------
+"""PyLg: facilitate and automate the process of writing runtime logs."""
 
-from __future__ import print_function
 from datetime import datetime
 from functools import partial
+from typing import Optional
 import traceback
 import warnings
 import textwrap
@@ -26,103 +10,156 @@ import inspect
 import sys
 import os
 
-# -----------------------------------------------------------------------------
-# Load settings.
-# -----------------------------------------------------------------------------
-from .load_settings import *
+from pylg.settings import _pylg_check_bool
+import pylg.settings
 
 
-class ClassNameStack(object):
+class ClassNameStack:
+    """Stack for the class names of the currently executing functions.
 
-    """ A class to keep a global stack of the class names of the
-        functions that are currently executing. The class name of the
-        last traced function that was called will be on top of the
-        stack. It is removed after it finishes executing.
+    The class name of the last traced function that was called will be on top
+    of the stack. It is removed after it finishes executing.
+
     """
 
     stack = []
 
-    @staticmethod
-    def insert(classname):
-        if CLASS_NAME_RESOLUTION:
-            ClassNameStack.stack.append(classname)
+    @classmethod
+    def disable(cls) -> None:
+        """Disable the stack.
 
-    @staticmethod
-    def pop():
-        if CLASS_NAME_RESOLUTION and ClassNameStack.stack:
-                ClassNameStack.stack.pop()
+        This is achieved by rendering all functions no-ops.
 
-    @staticmethod
-    def get():
-        if CLASS_NAME_RESOLUTION and ClassNameStack.stack:
-            return ClassNameStack.stack[-1]
-        else:
-            return None
+        WARNING: This is an irreversible operation.
+
+        """
+        cls.insert = lambda _classname: None
+        cls.pop = lambda: None
+        cls.get = lambda: None
+
+    @classmethod
+    def insert(cls, classname: str) -> None:
+        """Insert an entry.
+
+        Parameters
+        ----------
+        classname : str
+            The class name to insert.
+
+        """
+        cls.stack.append(classname)
+
+    @classmethod
+    def pop(cls) -> str:
+        """str: Return top-most entry and remove it."""
+        return cls.stack.pop() if cls.stack else None
+
+    @classmethod
+    def peek(cls) -> str:
+        """str: Return the top-most entry without removing it."""
+        return ClassNameStack.stack[-1] if cls.stack else None
 
 
-class PyLg(object):
-
-    """ Class to handle the log file.
-    """
+class PyLg:
+    """Class to handle the log file."""
 
     wfile = None
-    filename = PYLG_FILE
 
-    @staticmethod
-    def set_filename(new_filename):
+    @classmethod
+    def configure(cls, user_settings_path: Optional[str] = None) -> None:
+        """PyLg initialisation.
 
-        """ Change the file name of the log file. The change will be
-            rejected if the log file is already open.
+        Parameters
+        ----------
+        user_settings_path : Optional[str]
+            Path to the user settings file.
 
-            :param str new_filename: The new file name for the log file.
         """
 
-        if PyLg.wfile is None:
-            PyLg.filename = new_filename
-        else:
-            warnings.warn("PyLg wfile is open - cannot change filename")
+        # ---------------------------------------------------------------------
+        # Load the settings.
+        # ---------------------------------------------------------------------
+        settings = pylg.settings.load(user_settings_path)
 
-    @staticmethod
-    def write(string):
+        # ---------------------------------------------------------------------
+        # Local variables for settings to avoid dictionary access which is only
+        # O(1) on average. Admittedly the size of the settings dict is not
+        # large, but these accesses will be frequent.
+        # ---------------------------------------------------------------------
+        cls.pylg_enable = settings["pylg_enable"]
+        cls.pylg_file = settings["pylg_file"]
+        cls.default_exception_warning = settings["default_exception_warning"]
+        cls.default_exception_tb_file = settings["default_exception_tb_file"]
+        cls.default_exception_tb_stderr = \
+            settings["default_exception_tb_stderr"]
+        cls.default_exception_exit = settings["default_exception_exit"]
+        cls.trace_time = settings["trace_time"]
+        cls.time_format = settings["time_format"]
+        cls.trace_filename = settings["trace_filename"]
+        cls.filename_column_width = settings["filename_column_width"]
+        cls.trace_lineno = settings["trace_lineno"]
+        cls.lineno_width = settings["lineno_width"]
+        cls.trace_function = settings["trace_function"]
+        cls.function_column_width = settings["function_column_width"]
+        cls.class_name_resolution = settings["class_name_resolution"]
+        cls.trace_message = settings["trace_message"]
+        cls.message_width = settings["message_width"]
+        cls.message_wrap = settings["message_wrap"]
+        cls.message_mark_truncation = settings["message_mark_truncation"]
+        cls.trace_self = settings["trace_self"]
+        cls.collapse_lists = settings["collapse_lists"]
+        cls.collapse_dicts = settings["collapse_dicts"]
+        cls.default_trace_args = settings["default_trace_args"]
+        cls.default_trace_rv = settings["default_trace_rv"]
+        cls.default_trace_rv_type = settings["default_trace_rv_type"]
 
-        """ Write to the log file. A new log file is opened and
-            initialised if it has not been opened yet.
+        if not cls.class_name_resolution:
+            ClassNameStack.disable()
 
-            :param str string: The string to be written to the log file.
+        cls.wfile = open(cls.pylg_file, "w")
+        cls.wfile.write(
+            "=== Log initialised at {} ===\n\n".format(datetime.now())
+        )
+
+    @classmethod
+    def write(cls, string: str):
+        """Write to the log file.
+
+        A new log file is opened and initialised if it has not been opened yet.
+
+        Parameters
+        ----------
+        string : str
+            The string to be written to the log file.
+
         """
 
-        if PyLg.wfile is None:
-            PyLg.wfile = open(PyLg.filename, "w")
-            PyLg.wfile.write("=== Log initialised at " +
-                             str(datetime.now()) + " ===\n\n")
+        cls.wfile.write(string)
+        cls.wfile.flush()
 
-        PyLg.wfile.write(string)
-        PyLg.wfile.flush()
+    @classmethod
+    def close(cls):
+        """Close the log file."""
 
-    @staticmethod
-    def close():
-
-        """ Close the log file.
-        """
-
-        if PyLg.wfile is not None:
-            PyLg.wfile.close()
-            PyLg.wfile = None
+        if cls.wfile is not None:
+            cls.wfile.close()
+            cls.wfile = None
         else:
             warnings.warn("PyLg wfile is not open - nothing to close")
 
 
-class TraceFunction(object):
+# pylint: disable=too-many-instance-attributes
+class TraceFunction:
+    """Decorator to trace entry and exit from functions.
 
-    """ Class that serves as a decorator to trace entry and exit from
-        functions. Used by appending @TraceFunction on top of the
-        definition of the function to trace.
+    Used by appending @TraceFunction on top of the definition of the function
+    to trace.
+
     """
 
-    class TraceFunctionStruct(object):
-
-        """ Internal object to handle traced function properties.
-        """
+    # pylint: disable=too-few-public-methods
+    class TraceFunctionStruct:
+        """Internal object to handle traced function properties."""
 
         function = None
         varnames = None
@@ -134,19 +171,10 @@ class TraceFunction(object):
         functionname = None
 
     def __get__(self, obj, objtype):
-
-        """ Support for instance functions.
-        """
-
+        """Support for instance functions."""
         return partial(self.__call__, obj)
 
     def __init__(self, *args, **kwargs):
-
-        """ Constructor for TraceFunction. Note that the behaviour is
-            different depending on whether TraceFunction is passed any
-            parameters. For details see __call__ in this class.
-        """
-
         # ---------------------------------------------------------------------
         # Make sure this decorator is never called with no arguments.
         # ---------------------------------------------------------------------
@@ -154,14 +182,14 @@ class TraceFunction(object):
 
         if args:
 
-            self.exception_warning = DEFAULT_EXCEPTION_WARNING
-            self.exception_tb_file = DEFAULT_EXCEPTION_TB_FILE
-            self.exception_tb_stderr = DEFAULT_EXCEPTION_TB_STDERR
-            self.exception_exit = DEFAULT_EXCEPTION_EXIT
+            self._exception_warning = PyLg.default_exception_warning
+            self._exception_tb_file = PyLg.default_exception_tb_file
+            self._exception_tb_stderr = PyLg.default_exception_tb_stderr
+            self._exception_exit = PyLg.default_exception_exit
 
-            self.trace_args = DEFAULT_TRACE_ARGS
-            self.trace_rv = DEFAULT_TRACE_RV
-            self.trace_rv_type = DEFAULT_TRACE_RV_TYPE
+            self._trace_args = PyLg.default_trace_args
+            self._trace_rv = PyLg.default_trace_rv
+            self._trace_rv_type = PyLg.default_trace_rv_type
 
             # -----------------------------------------------------------------
             # The function init_function will verify the input.
@@ -169,6 +197,11 @@ class TraceFunction(object):
             self.init_function(*args, **kwargs)
 
         if kwargs:
+
+            # -----------------------------------------------------------------
+            # If kwargs is non-empty, args should be empty.
+            # -----------------------------------------------------------------
+            assert not args
 
             exception_warning_str = 'exception_warning'
             exception_tb_file_str = 'exception_tb_file'
@@ -179,70 +212,47 @@ class TraceFunction(object):
             trace_rv_str = 'trace_rv'
             trace_rv_type_str = 'trace_rv_type'
 
-            # -----------------------------------------------------------------
-            # If kwargs is non-empty, args should be empty.
-            # -----------------------------------------------------------------
-            assert not args
+            kwopts = {}
+            for option, default in [
+                    (exception_warning_str, PyLg.default_exception_warning),
+                    (exception_tb_file_str, PyLg.default_exception_tb_file),
+                    (exception_tb_stderr_str,
+                     PyLg.default_exception_tb_stderr),
+                    (exception_exit_str, PyLg.default_exception_exit),
+                    (trace_args_str, PyLg.default_trace_args),
+                    (trace_rv_str, PyLg.default_trace_rv),
+                    (trace_rv_type_str, PyLg.default_trace_rv_type),
+            ]:
 
-            try:
-                self.exception_warning = kwargs[exception_warning_str]
-                pylg_check_bool(self.exception_warning, "exception_warning")
-            except (KeyError, ImportError):
-                self.exception_warning = DEFAULT_EXCEPTION_WARNING
+                kwopts[option] = kwargs.get(option, default)
+                if not _pylg_check_bool(kwopts[option]):
+                    raise ValueError(
+                        "Invalid type for {} - should be bool, is type {}"
+                        .format(option, type(kwopts[option]).__name__)
+                    )
 
-            try:
-                self.exception_tb_file = kwargs[exception_tb_file_str]
-                pylg_check_bool(self.exception_tb_file, "exception_tb_file")
-            except (KeyError, ImportError):
-                self.exception_tb_file = DEFAULT_EXCEPTION_TB_FILE
+            self._exception_warning = kwopts[exception_warning_str]
+            self._exception_tb_file = kwopts[exception_tb_file_str]
+            self._exception_tb_stderr = kwopts[exception_tb_stderr_str]
+            self._exception_exit = kwopts[exception_exit_str]
 
-            try:
-                self.exception_tb_stderr = kwargs[exception_tb_stderr_str]
-                pylg_check_bool(self.exception_tb_stderr,
-                                "exception_tb_stderr")
-            except (KeyError, ImportError):
-                self.exception_tb_stderr = DEFAULT_EXCEPTION_TB_STDERR
-
-            try:
-                self.exception_exit = kwargs[exception_exit_str]
-                pylg_check_bool(self.exception_exit, "exception_exit")
-            except (KeyError, ImportError):
-                self.exception_exit = DEFAULT_EXCEPTION_EXIT
-
-            try:
-                self.trace_args = kwargs[trace_args_str]
-                pylg_check_bool(self.trace_args, "trace_args")
-            except (KeyError, ImportError):
-                self.trace_args = DEFAULT_TRACE_ARGS
-
-            try:
-                self.trace_rv = kwargs[trace_rv_str]
-                pylg_check_bool(self.trace_rv, "trace_rv")
-            except (KeyError, ImportError):
-                self.trace_rv = DEFAULT_TRACE_RV
-
-            try:
-                self.trace_rv_type = kwargs[trace_rv_type_str]
-                pylg_check_bool(self.trace_rv_type, "trace_rv_type")
-            except (KeyError, ImportError):
-                self.trace_rv_type = DEFAULT_TRACE_RV_TYPE
+            self._trace_args = kwopts[trace_args_str]
+            self._trace_rv = kwopts[trace_rv_str]
+            self._trace_rv_type = kwopts[trace_rv_type_str]
 
             self.function = None
 
     def __call__(self, *args, **kwargs):
+        """Wrapper that is called when a call to a decorated function is made.
 
-        """ The actual wrapper that is called when a call to a
-            decorated function is made. It also handles extra
-            initialisation when parameters are passed to
-            TraceFunction.
+        It also handles extra initialisation when parameters are passed to
+        TraceFunction.
 
-            :return: The return value of the decorated function.
         """
 
         # ---------------------------------------------------------------------
-        # __call__ has to behave differently depending on whether the
-        # decorator has been given any parameters. The reason for this
-        # is as follows:
+        # __call__ has to behave differently depending on whether the decorator
+        # has been given any parameters. The reason for this is as follows:
         #
         # @TraceFunction
         # decorated_function
@@ -254,25 +264,24 @@ class TraceFunction(object):
         #
         # translates to TraceFunction(*args, **kwargs)(decorated_function)
         #
-        # In both cases, the result should be a callable object which
-        # will be called whenever the decorated function is called. In
-        # the first case, the callable object is an instance of
-        # TraceFunction, in the latter case the return value of
-        # TraceFunction.__call__ is the callable object.
+        # In both cases, the result should be a callable object which will be
+        # called whenever the decorated function is called. In the first case,
+        # the callable object is an instance of TraceFunction, in the latter
+        # case the return value of TraceFunction.__call__ is the callable
+        # object.
         # ---------------------------------------------------------------------
 
         if self.function is None:
             # -----------------------------------------------------------------
-            # If the decorator has been passed a parameter, __init__
-            # will not define self.function and __call__ will be
-            # called immediately after __init__ with the decorated
-            # function as the only parameter. Therefore, this __call__
-            # function has to return the callable object that is meant
-            # to be called every time the decorated function is
-            # called. Here, self is returned in order to return the
-            # object as the callable handle for the decorated
-            # function. This if block should be hit only once at most
-            # and only during initialisation.
+            # If the decorator has been passed a parameter, __init__ will not
+            # define self.function and __call__ will be called immediately
+            # after __init__ with the decorated function as the only parameter.
+            # Therefore, this __call__ function has to return the callable
+            # object that is meant to be called every time the decorated
+            # function is called. Here, self is returned in order to return the
+            # object as the callable handle for the decorated function. This if
+            # block should be hit only once at most and only during
+            # initialisation.
             # -----------------------------------------------------------------
             self.init_function(*args, **kwargs)
             return self
@@ -285,11 +294,13 @@ class TraceFunction(object):
 
         try:
             rv = self.function.function(*args, **kwargs)
-        except Exception as e:
-            self.trace_exception(e)
+        except Exception as exc:
+            self.trace_exception(exc)
 
-            if self.exception_exit:
+            if self._exception_exit:
                 warnings.warn("Exit forced by EXCEPTION_EXIT")
+
+                # pylint: disable=protected-access
                 os._exit(1)
 
             raise
@@ -300,17 +311,13 @@ class TraceFunction(object):
         return rv
 
     def init_function(self, *args, **kwargs):
-
-        """ Function to initialise the TraceFunctionStruct kept by the
-            decorator.
-        """
+        """Initialise the TraceFunctionStruct kept by the decorator."""
 
         # ---------------------------------------------------------------------
-        # This function should only ever be called with one parameter
-        # - the function to be decorated. These checks are done here,
-        # rather than by the caller, as anything that calls this
-        # function should also have been called with the decorated
-        # function as its only parameter.
+        # This function should only ever be called with one parameter - the
+        # function to be decorated. These checks are done here, rather than by
+        # the caller, as anything that calls this function should also have
+        # been called with the decorated function as its only parameter.
         # ---------------------------------------------------------------------
         assert not kwargs
         assert len(args) == 1
@@ -329,8 +336,8 @@ class TraceFunction(object):
                     argspec.defaults))
 
         # ---------------------------------------------------------------------
-        # init_function is called from either __init__ or __call__ and
-        # we want the frame before that.
+        # init_function is called from either __init__ or __call__ and we want
+        # the frame before that.
         # ---------------------------------------------------------------------
         frames_back = 2
         caller_frame = inspect.stack()[frames_back]
@@ -341,10 +348,11 @@ class TraceFunction(object):
         self.function.functionname = self.function.function.__name__
 
     def trace_entry(self, *args, **kwargs):
+        """Handle function entry.
 
-        """ Called on function entry. This function collects all the
-            function arguments and constructs a message to pass to
-            trace.
+        This function collects all the function arguments and constructs a
+        message to pass to trace.
+
         """
 
         # ---------------------------------------------------------------------
@@ -355,23 +363,22 @@ class TraceFunction(object):
             msg += ": "
 
             n_args = len(args)
-            if self.trace_args:
+            if self._trace_args:
                 for arg in range(n_args):
 
-                    if not TRACE_SELF and \
+                    if not PyLg.trace_self and \
                        self.function.varnames[arg] == "self":
                         continue
 
-                    msg += (self.function.varnames[arg] + " = " +
-                            self.get_value_string(args[arg]) + ", ")
+                    msg += "{} = {}, ".format(
+                        self.function.varnames[arg],
+                        self.get_value_string(args[arg])
+                    )
 
                 for name in self.function.varnames[n_args:]:
-                    msg += name + " = "
-                    if name in kwargs:
-                        value = kwargs[name]
-                    else:
-                        value = self.function.defaults[name]
-                    msg += self.get_value_string(value) + ", "
+                    msg += "{} = {}, ".format(
+                        name, kwargs.get(name, self.function.defaults[name])
+                    )
 
                 msg = msg[:-2]
 
@@ -381,11 +388,10 @@ class TraceFunction(object):
         trace(msg, function=self.function)
 
     def trace_exit(self, rv=None):
+        """Handle function exit.
 
-        """ Called on function exit to log the fact that a function has
-            finished executing.
+        Log the fact that a function has finished executing.
 
-            :param rv: The return value of the traced function.
         """
 
         # ---------------------------------------------------------------------
@@ -394,22 +400,19 @@ class TraceFunction(object):
         msg = "<- EXIT "
         if rv is not None:
             msg += ": "
-            if self.trace_rv:
+            if self._trace_rv:
                 msg += self.get_value_string(rv)
             else:
                 msg += "---"
 
-            if self.trace_rv_type:
-                msg += " (type: " + type(rv).__name__ + ")"
+            if self._trace_rv_type:
+                msg += " (type: {})".format(type(rv).__name__)
 
         trace(msg, function=self.function)
-        return
 
     def trace_exception(self, exception):
+        """Called when a function terminated due to an exception.
 
-        """ Called when a function terminated due to an exception.
-
-            :param exception: The raised exception.
         """
 
         # ---------------------------------------------------------------------
@@ -418,58 +421,55 @@ class TraceFunction(object):
         core_msg = type(exception).__name__ + " RAISED"
         msg = "<- EXIT : " + core_msg
 
-        if str(exception) is not "":
+        if str(exception) != "":
             msg += " - " + str(exception)
 
-        if self.exception_warning:
+        if self._exception_warning:
             warnings.warn(core_msg, RuntimeWarning)
 
-        if self.exception_tb_file:
+        if self._exception_tb_file:
             msg += "\n--- EXCEPTION ---\n"
             msg += traceback.format_exc()
             msg += "-----------------"
 
-        if self.exception_tb_stderr:
+        if self._exception_tb_stderr:
             print("--- EXCEPTION ---", file=sys.stderr)
             traceback.print_exc(file=sys.stderr)
             print("-----------------", file=sys.stderr)
 
         trace(msg, function=self.function)
-        return
 
-    def get_value_string(self, value):
+    @staticmethod
+    def get_value_string(value):
+        """Convert value to a string for the log."""
 
-        """ Convert value to a string for the log.
-        """
+        if isinstance(value, list) and PyLg.collapse_lists:
+            return "[ len={} ]".format(len(value))
 
-        if isinstance(value, list) and COLLAPSE_LISTS:
-            return self.collapse_list(value)
-        elif isinstance(value, dict) and COLLAPSE_DICTS:
-            return self.collapse_dict(value)
-        else:
-            return str(value)
+        if isinstance(value, dict) and PyLg.collapse_dicts:
+            return "{{ len={} }}".format(len(value))
 
-    def collapse_list(self, ll):
-        return "[ len=" + str(len(ll)) + " ]"
-
-    def collapse_dict(self, dd):
-        return "{ len=" + str(len(dd)) + " }"
+        return "{}".format(value)
 
 
 def trace(message, function=None):
+    """Write message to the log file.
 
-    """ Writes message to the log file. It will also log the time,
-        filename, line number and function name.
+    It will also log the time, filename, line number and function name.
 
-        :param str message: The log message.
-        :param function: A TraceFunctionStruct object if called from within
-                         TraceFunction.
+    Parameters
+    ----------
+    message : str
+        The log message.
+    function : Optional[TraceFunctionStruct]
+        A TraceFunctionStruct object if called from within TraceFunction.
+
     """
 
     if function is None:
         # ---------------------------------------------------------------------
-        # If there is no function object, we need to work out
-        # where the trace call was made from.
+        # If there is no function object, we need to work out where the trace
+        # call was made from.
         # ---------------------------------------------------------------------
         frames_back = 1
         caller_frame = inspect.stack()[frames_back]
@@ -484,37 +484,40 @@ def trace(message, function=None):
         functionname = function.functionname
 
     # -------------------------------------------------------------------------
-    # If CLASS_NAME_RESOLUTION is enabled, the top element of the
-    # stack should be the class name of the function from which this
-    # trace call is made. This cannot be policed so the user must make
-    # sure this is the case by ensuring that trace is only called
-    # outside of any function or from within functions that have the
-    # @TraceFunction decorator.
+    # If _CLASS_NAME_RESOLUTION is enabled, the top element of the stack should
+    # be the class name of the function from which this trace call is made.
+    # This cannot be policed so the user must make sure this is the case by
+    # ensuring that trace is only called outside of any function or from within
+    # functions that have the @TraceFunction decorator.
     # -------------------------------------------------------------------------
     classname = ClassNameStack.get()
     if classname is not None and classname != "<module>":
-        functionname = classname + "." + functionname
+        functionname = "{}.{}".format(classname, functionname)
 
     # -------------------------------------------------------------------------
     # Generate the string based on the settings.
     # -------------------------------------------------------------------------
     msg = ""
 
-    if TRACE_TIME:
-        msg += datetime.now().strftime(TIME_FORMAT) + "  "
+    if PyLg.trace_time:
+        msg += datetime.now().strftime(PyLg.time_format) + "  "
 
-    if TRACE_FILENAME:
-        msg += '{filename:{w}.{w}}  '.format(filename=filename,
-                                             w=FILENAME_COLUMN_WIDTH)
+    if PyLg.trace_filename:
+        msg += "{filename:{w}.{w}}  ".format(
+            filename=filename,
+            w=PyLg.filename_column_width
+        )
 
-    if TRACE_LINENO:
-        msg += '{lineno:0{w}}: '.format(lineno=lineno, w=LINENO_WIDTH)
+    if PyLg.trace_lineno:
+        msg += "{lineno:0{w}}: ".format(lineno=lineno, w=PyLg.lineno_width)
 
-    if TRACE_FUNCTION:
-        msg += '{function:{w}.{w}}  '.format(function=functionname,
-                                             w=FUNCTION_COLUMN_WIDTH)
+    if PyLg.trace_function:
+        msg += "{function:{w}.{w}}  ".format(
+            function=functionname,
+            w=PyLg.function_column_width
+        )
 
-    if TRACE_MESSAGE:
+    if PyLg.trace_message:
 
         message = str(message)
 
@@ -535,20 +538,20 @@ def trace(message, function=None):
             # -----------------------------------------------------------------
             # Wrap the text.
             # -----------------------------------------------------------------
-            wrapped = textwrap.wrap(line, MESSAGE_WIDTH)
+            wrapped = textwrap.wrap(line, PyLg.message_width)
 
             if not wrapped:
                 wrapped = [""]
 
             # -----------------------------------------------------------------
-            # If this is the first line of the whole trace message, it
-            # gets special treatment as it doesn't need whitespace in
-            # front of it. Otherwise, align it with the previous line.
+            # If this is the first line of the whole trace message, it gets
+            # special treatment as it doesn't need whitespace in front of it.
+            # Otherwise, align it with the previous line.
             # -----------------------------------------------------------------
             if idx != 0:
-                msg += '{:{w}}'.format('', w=premsglen)
+                msg += "{:{w}}".format("", w=premsglen)
 
-            if MESSAGE_WRAP:
+            if PyLg.message_wrap:
 
                 # -------------------------------------------------------------
                 # The first wrapped line gets special treatment as any
@@ -557,34 +560,38 @@ def trace(message, function=None):
                 msg += wrapped[0]
 
                 # -------------------------------------------------------------
-                # Print the remaining lines. Append whitespace to
-                # align it with the first line.
+                # Print the remaining lines. Append whitespace to align it with
+                # the first line.
                 # -------------------------------------------------------------
                 for wrline in wrapped[1:]:
-                    msg += '\n' + '{:{w}}'.format('', w=premsglen) + wrline
+                    msg += "\n{:{w}}".format('', w=premsglen) + wrline
 
             else:
                 # -------------------------------------------------------------
                 # The message is not being wrapped.
                 # -------------------------------------------------------------
 
-                if MESSAGE_MARK_TRUNCATION and wrapped[1:]:
+                if PyLg.message_mark_truncation and wrapped[1:]:
                     # ---------------------------------------------------------
-                    # We want to mark truncated lines so we need to
-                    # determine if the line is being truncated. If it
-                    # is we replace the last character with '\'.
+                    # We want to mark truncated lines so we need to determine
+                    # if the line is being truncated. If it is we replace the
+                    # last character with '\'.
                     # ---------------------------------------------------------
 
-                    if MESSAGE_WIDTH > 1:
-                        wrapped = textwrap.wrap(wrapped[0], MESSAGE_WIDTH - 1)
+                    if PyLg.message_width > 1:
+                        wrapped = textwrap.wrap(
+                            wrapped[0],
+                            PyLg.message_width - 1
+                        )
                         assert wrapped
 
-                        msg += ('{m:{w}}'.format(m=wrapped[0],
-                                                 w=MESSAGE_WIDTH - 1) +
-                                '\\')
+                        msg += "{m:{w}}\\".format(
+                            m=wrapped[0],
+                            w=PyLg.message_width - 1,
+                        )
 
                     else:
-                        assert MESSAGE_WIDTH == 1
+                        assert PyLg.message_width == 1
                         msg += '\\'
 
                 else:
