@@ -1,5 +1,12 @@
-from pylg import TraceFunction, trace
+from pylg import TraceFunction, trace, PyLg
 import sys
 
 def test_load():
-    print(sys.modules['__main__'].__file__)
+
+    PyLg.configure(user_settings_path="tests/custom.yml")
+
+    @TraceFunction
+    def decorated_function():
+        pass
+
+    decorated_function()

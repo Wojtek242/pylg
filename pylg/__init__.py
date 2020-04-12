@@ -2,7 +2,7 @@
 
 """
 
-from pylg.pylg import TraceFunction, trace
+from pylg.pylg import PyLg, TraceFunction, trace
 
 assert TraceFunction
 assert trace
